@@ -1,0 +1,13 @@
+# ninja log v5
+190	517	1768833355856937600	include/MathDialect.cpp.inc	757200b525bcd517
+190	517	1768833355856937600	/mnt/c/Users/MarkVeerasingam/Documents/Repos/LearningMLIR/MathDialect/build/include/MathDialect.cpp.inc	757200b525bcd517
+192	520	1768833355856937600	/mnt/c/Users/MarkVeerasingam/Documents/Repos/LearningMLIR/MathDialect/build/include/MathDialect.h.inc	916efd7160f476ed
+192	520	1768833355856937600	include/MathDialect.h.inc	916efd7160f476ed
+191	295	1768829900976653400	include/MathDialect.h.inc	9e47768701f914b1
+191	295	1768829900976653400	/mnt/c/Users/MarkVeerasingam/Documents/Repos/LearningMLIR/MathDialect/build/include/MathDialect.h.inc	9e47768701f914b1
+190	422	1768829900976653400	include/MathDialect.cpp.inc	9e0c138baf7f7fda
+190	422	1768829900976653400	/mnt/c/Users/MarkVeerasingam/Documents/Repos/LearningMLIR/MathDialect/build/include/MathDialect.cpp.inc	9e0c138baf7f7fda
+203	4597	1768833546410157000	lib/CMakeFiles/obj.MLIRStandalone.dir/MathDialect.cpp.o	728ee702c0809106
+4652	5016	1768833546826435700	lib/libMLIRStandalone.a	9fc44fb5e5893dde
+705	7593	1768833559639949600	lib/CMakeFiles/obj.MLIRStandalone.dir/MathDialect.cpp.o	728ee702c0809106
+7604	7749	1768833559799615100	lib/libMLIRStandalone.a	9fc44fb5e5893dde
