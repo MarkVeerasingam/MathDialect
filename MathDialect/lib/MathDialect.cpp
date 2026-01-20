@@ -1,4 +1,5 @@
 #include "MathDialect.h"
+#include "MathOps.h"
 
 using namespace mlir;
 using namespace mlir::math;
@@ -13,6 +14,7 @@ void MathDialect::initialize()
 {
   addOperations<
 #define GET_OP_LIST
+#include "MathOps.cpp.inc"
       >();
   // registerTypes();
 }
