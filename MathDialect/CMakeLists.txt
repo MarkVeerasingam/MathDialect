@@ -17,4 +17,4 @@ include(TableGen)
 
 add_subdirectory(include)
 add_subdirectory(lib)
-# add_subdirectory(math-opt)
+add_subdirectory(math-opt) # added this
