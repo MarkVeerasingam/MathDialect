@@ -9,9 +9,10 @@ using namespace mlir::math;
 // Math dialect.
 //===----------------------------------------------------------------------===//
 
-void MathDialect::initialize() {
+void MathDialect::initialize()
+{
   addOperations<
 #define GET_OP_LIST
       >();
-  registerTypes();
+  // registerTypes();
 }
