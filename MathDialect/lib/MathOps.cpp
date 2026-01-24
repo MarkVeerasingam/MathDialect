@@ -65,5 +65,51 @@ OpFoldResult SubOp::fold(FoldAdaptor adaptor) {
     return nullptr;
 }
 
+//===----------------------------------------------------------------------===//
+// MulOp Folding
+//===----------------------------------------------------------------------===//
+
+OpFoldResult MulOp::fold(FoldAdaptor adaptor) {
+  // 1. Identity: x * 1 = x
+  if (matchPattern(getRhs(), m_One()))
+    return getLhs();
+
+  // 2. Identity: x * 0 = 0
+  if (matchPattern(getRhs(), m_Zero()))
+    return getRhs(); // Returns the zero attribute
+
+  // 3. Constant Folding
+  auto lhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getLhs());
+  auto rhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getRhs());
+  if (lhs && rhs)
+    return IntegerAttr::get(lhs.getType(), lhs.getInt() * rhs.getInt());
+
+  return nullptr;
+}
+
+//===----------------------------------------------------------------------===//
+// DivOp Folding
+//===----------------------------------------------------------------------===//
+
+OpFoldResult DivOp::fold(FoldAdaptor adaptor) {
+  // 1. Identity: x / 1 = x
+  if (matchPattern(getRhs(), m_One()))
+    return getLhs();
+
+  // 2. Constant Folding
+  auto lhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getLhs());
+  auto rhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getRhs());
+  
+  if (lhs && rhs) {
+    auto divisor = rhs.getInt();
+    // 3. Safety Check: Don't fold if divisor is 0!
+    // If we don't check this, the compiler itself will crash (SIGFPE)
+    if (divisor != 0)
+      return IntegerAttr::get(lhs.getType(), lhs.getInt() / divisor);
+  }
+
+  return nullptr;
+}
+
 #define GET_OP_CLASSES
 #include "MathOps.cpp.inc"

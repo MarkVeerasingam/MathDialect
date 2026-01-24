@@ -2,6 +2,7 @@ set(LIBS
   MLIRToyMathDialect
   MLIRArithDialect
   MLIRFuncDialect
+  MLIRTransforms
   MLIROptLib
   MLIRIR
 )

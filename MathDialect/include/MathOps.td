@@ -53,3 +53,29 @@ def Math_SubOp : Math_Op<"sub", [Pure]> {
 
     let hasFolder = 1;
 }
+
+// Mul Op
+def Math_MulOp : Math_Op<"mul", [Pure, Commutative]> {
+    let summary = "binary subtraction operation";
+    let description = [{
+        The "mul" operation takes two 32-bit integer operands and returns 
+        their multiple.
+    }];
+    let arguments = (ins I32:$lhs, I32:$rhs);    
+    let results = (outs I32:$res);
+    let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($res)";
+    let hasFolder = 1;
+}
+
+// Div Op
+def Math_DivOp : Math_Op<"div", [Pure]> {
+    let summary = "binary subtraction operation";
+    let description = [{
+        The "div" operation takes two 32-bit integer operands and returns 
+        their divisable.
+    }];
+    let arguments = (ins I32:$lhs, I32:$rhs);    
+    let results = (outs I32:$res);
+    let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($res)";
+    let hasFolder = 1;
+}
