@@ -1,6 +1,3 @@
-#ifndef MATH_OPS
-#define MATH_OPS
-
 include "MathDialect.td" 
 include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
@@ -32,6 +29,24 @@ def Math_AddOp : Math_Op<"add", [Pure]> {
 
     // %sum = math.add %lhs, %rhs : i32
     let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($res)";
+
 }
 
-#endif // MATH_OPS
+// Sub Op
+def Math_SubOp : Math_Op<"sub", [Pure]> {
+    let summary = "binary subtraction operation";
+    let description = [{
+        The "sub" operation takes two 32-bit integer operands and returns 
+        their sum.
+    }];
+
+    // Operands: The two values to be added
+    let arguments = (ins I32:$lhs, I32:$rhs);
+    
+    // Result: The sum of the operands
+    let results = (outs I32:$res);
+
+    // %sum = math.sub %lhs, %rhs : i32
+    let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($res)";
+
+}
