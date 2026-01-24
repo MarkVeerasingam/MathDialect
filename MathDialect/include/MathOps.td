@@ -11,6 +11,7 @@ def Math_ConstantOp : Math_Op<"constant", [ConstantLike, Pure]> {
     let arguments = (ins I32Attr:$value);
     let results = (outs I32:$res);
     let assemblyFormat = "$value attr-dict `:` type($res)";
+    let hasFolder = 1;
 }
 
 // Add Op
@@ -30,6 +31,7 @@ def Math_AddOp : Math_Op<"add", [Pure]> {
     // %sum = math.add %lhs, %rhs : i32
     let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($res)";
 
+    let hasFolder = 1;
 }
 
 // Sub Op
@@ -49,4 +51,5 @@ def Math_SubOp : Math_Op<"sub", [Pure]> {
     // %sum = math.sub %lhs, %rhs : i32
     let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($res)";
 
+    let hasFolder = 1;
 }
