@@ -1,51 +1,11 @@
 #include "MathOps.h"
 #include "mlir/IR/Matchers.h"
+#include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/OpImplementation.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 
 using namespace mlir;
 using namespace mlir::math;
-
-// // === ConstantOp Implementation ===
-
-// OpFoldResult ConstantOp::fold(FoldAdaptor adaptor)
-// {
-//   // Simply return the attribute value itself
-//   return getValue();
-// }
-
-// LogicalResult ConstantOp::verify()
-// {
-//   // Basic verification: ensure the value attribute matches the result type
-//   auto type = getType();
-//   auto value = getValue();
-
-//   if (!llvm::isa<IntegerAttr, FloatAttr, ElementsAttr>(value))
-//     return emitOpError("requires an integer or floating point attribute");
-
-//   return success();
-// }
-
-// ParseResult ConstantOp::parse(OpAsmParser &parser, OperationState &result)
-// {
-//   Attribute valueAttr;
-//   // This parses "5 : i32" as a single TypedAttr
-//   if (parser.parseAttribute(valueAttr))
-//     return failure();
-
-//   result.addAttribute("value", valueAttr);
-
-//   // Extract the type from the attribute to set the result type
-//   if (auto typedAttr = llvm::dyn_cast<TypedAttr>(valueAttr))
-//     result.addTypes(typedAttr.getType());
-
-//   return success();
-// }
-
-// void ConstantOp::print(OpAsmPrinter &p)
-// {
-//   p << " ";
-//   p.printAttribute(getValue()); // This prints "5 : i32"
-// }
 
 // === AddOp Implementation ===
 
@@ -194,6 +154,50 @@ OpFoldResult SplatOp::fold(FoldAdaptor adaptor)
   // Create a SplatElementsAttr: this is the "canonical" way to represent
   // a tensor filled with a single constant value.
   return SplatElementsAttr::get(tensorType, srcAttr);
+}
+
+// Pattern: x - x  => 0
+struct SimplifySameOperandSub : public OpRewritePattern<SubOp>
+{
+  using OpRewritePattern<SubOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(SubOp op, PatternRewriter &rewriter) const override
+  {
+    if (op.getLhs() != op.getRhs())
+      return failure();
+
+    // Replace with a constant zero of the same type
+    auto zeroAttr = rewriter.getZeroAttr(op.getType());
+    rewriter.replaceOpWithNewOp<arith::ConstantOp>(op, zeroAttr);
+    return success();
+  }
+};
+
+// Pattern: x + 0 => x
+struct SimplifyAddZero : public OpRewritePattern<AddOp>
+{
+  using OpRewritePattern<AddOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(AddOp op, PatternRewriter &rewriter) const override
+  {
+    if (matchPattern(op.getRhs(), m_Zero()))
+    {
+      rewriter.replaceOp(op, op.getLhs());
+      return success();
+    }
+    return failure();
+  }
+};
+
+// Register them
+void SubOp::getCanonicalizationPatterns(RewritePatternSet &results, MLIRContext *context)
+{
+  results.add<SimplifySameOperandSub>(context);
+}
+
+void AddOp::getCanonicalizationPatterns(RewritePatternSet &results, MLIRContext *context)
+{
+  results.add<SimplifyAddZero>(context);
 }
 
 #define GET_OP_CLASSES

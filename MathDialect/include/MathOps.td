@@ -6,19 +6,6 @@ include "MathDialect.td"
 class Math_Op<string mnemonic, list<Trait> traits = []> :
     Op<Math_Dialect, mnemonic, traits>;
 
-// // Constant Op
-// def Math_ConstantOp : Math_Op<"constant", [Pure, ConstantLike]> {
-//     let summary = "Constant value (scalar or tensor)";
-//     let arguments = (ins AnyAttr:$value);
-    
-//     // Allow the result to be a scalar OR a ranked tensor
-//     let results = (outs AnyTypeOf<[AnyFloat, AnyInteger, AnyRankedTensor]>:$res);
-    
-//     let hasCustomAssemblyFormat = 1;
-//     let hasFolder = 1;
-//     let hasVerifier = 1;
-// }
-
 // Add Op
 def Math_AddOp : Math_Op<"add", [Pure, AllTypesMatch<["lhs", "rhs", "res"]>]> {
     let arguments = (ins AnyTypeOf<[AnyFloat, AnyInteger]>:$lhs, 
@@ -28,6 +15,7 @@ def Math_AddOp : Math_Op<"add", [Pure, AllTypesMatch<["lhs", "rhs", "res"]>]> {
 
     let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($res)";
     let hasFolder = 1; 
+    let hasCanonicalizer = 1;
 }
 
 // Subtraction Op
@@ -37,9 +25,10 @@ def Math_SubOp : Math_Op<"sub", [Pure, AllTypesMatch<["lhs", "rhs", "res"]>]> {
     let results = (outs AnyTypeOf<[AnyFloat, AnyInteger]>:$res);
     let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($res)";
     let hasFolder = 1;
+    let hasCanonicalizer = 1;
 }
 
-// Multiplication Op
+// Multiplication Ops
 def Math_MulOp : Math_Op<"mul", [Pure, AllTypesMatch<["lhs", "rhs", "res"]>]> {
     let arguments = (ins AnyTypeOf<[AnyFloat, AnyInteger]>:$lhs, 
                          AnyTypeOf<[AnyFloat, AnyInteger]>:$rhs);
@@ -58,13 +47,7 @@ def Math_DivOp : Math_Op<"div", [Pure, AllTypesMatch<["lhs", "rhs", "res"]>]> {
 }
 
 // Splat Op
-def Math_SplatOp : Math_Op<"splat", [
-    Pure,
-    // Move the matching logic here as a Trait
-    TypesMatchWith<"scalar type matches tensor element type",
-                   "result", "src",
-                   "llvm::cast<TensorType>($_self).getElementType()">
-  ]> {
+def Math_SplatOp : Math_Op<"splat"> {
     let summary = "Splat a scalar value into a tensor";
     let description = [{
         The `math.splat` operation creates a tensor where every element is 
