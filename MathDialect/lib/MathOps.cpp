@@ -8,7 +8,6 @@ using namespace mlir;
 using namespace mlir::math;
 
 // === AddOp Implementation ===
-
 OpFoldResult AddOp::fold(FoldAdaptor adaptor)
 {
   // 1. Algebraic simplification: x + 0 = x
@@ -45,6 +44,45 @@ OpFoldResult AddOp::fold(FoldAdaptor adaptor)
   return nullptr;
 }
 
+// Pattern: x + 0 => x
+struct SimplifyAddZero : public OpRewritePattern<AddOp>
+{
+  using OpRewritePattern<AddOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(AddOp op, PatternRewriter &rewriter) const override
+  {
+    if (matchPattern(op.getRhs(), m_Zero()))
+    {
+      rewriter.replaceOp(op, op.getLhs());
+      return success();
+    }
+    return failure();
+  }
+};
+
+// Pattern: math.add(%tensor, math.splat(%scalar)) -> math.add_ts(%tensor, %scalar)
+struct FuseAddSplat : public OpRewritePattern<AddOp>
+{
+  using OpRewritePattern<AddOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(AddOp op, PatternRewriter &rewriter) const override
+  {
+    // We expect the RHS to be the result of a SplatOp
+    auto splatOp = op.getRhs().getDefiningOp<SplatOp>();
+    if (!splatOp)
+      return failure();
+
+    // Replace the generic Add with your specialized AddTensorScalar
+    rewriter.replaceOpWithNewOp<AddTensorScalarOp>(
+        op,
+        op.getType(),    // Result type
+        op.getLhs(),     // The Tensor
+        splatOp.getSrc() // The raw Scalar (un-splatted!)
+    );
+    return success();
+  }
+};
+
 // === SubOp Implementation ===
 OpFoldResult SubOp::fold(FoldAdaptor adaptor)
 {
@@ -71,6 +109,23 @@ OpFoldResult SubOp::fold(FoldAdaptor adaptor)
   }
   return nullptr;
 }
+
+// Pattern: x - x  => 0
+struct SimplifySameOperandSub : public OpRewritePattern<SubOp>
+{
+  using OpRewritePattern<SubOp>::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(SubOp op, PatternRewriter &rewriter) const override
+  {
+    if (op.getLhs() != op.getRhs())
+      return failure();
+
+    // Replace with a constant zero of the same type
+    auto zeroAttr = rewriter.getZeroAttr(op.getType());
+    rewriter.replaceOpWithNewOp<arith::ConstantOp>(op, zeroAttr);
+    return success();
+  }
+};
 
 // === MulOp Implementation ===
 OpFoldResult MulOp::fold(FoldAdaptor adaptor)
@@ -140,6 +195,14 @@ OpFoldResult DivOp::fold(FoldAdaptor adaptor)
   return nullptr;
 }
 
+OpFoldResult AddTensorScalarOp::fold(FoldAdaptor adaptor)
+{
+  // For now, we return nullptr so the linker is happy.
+  // Later, we can implement logic to fold if both the
+  // tensor and scalar are constants.
+  return nullptr;
+}
+
 // === SplatOp Implementation ===
 OpFoldResult SplatOp::fold(FoldAdaptor adaptor)
 {
@@ -156,40 +219,7 @@ OpFoldResult SplatOp::fold(FoldAdaptor adaptor)
   return SplatElementsAttr::get(tensorType, srcAttr);
 }
 
-// Pattern: x - x  => 0
-struct SimplifySameOperandSub : public OpRewritePattern<SubOp>
-{
-  using OpRewritePattern<SubOp>::OpRewritePattern;
-
-  LogicalResult matchAndRewrite(SubOp op, PatternRewriter &rewriter) const override
-  {
-    if (op.getLhs() != op.getRhs())
-      return failure();
-
-    // Replace with a constant zero of the same type
-    auto zeroAttr = rewriter.getZeroAttr(op.getType());
-    rewriter.replaceOpWithNewOp<arith::ConstantOp>(op, zeroAttr);
-    return success();
-  }
-};
-
-// Pattern: x + 0 => x
-struct SimplifyAddZero : public OpRewritePattern<AddOp>
-{
-  using OpRewritePattern<AddOp>::OpRewritePattern;
-
-  LogicalResult matchAndRewrite(AddOp op, PatternRewriter &rewriter) const override
-  {
-    if (matchPattern(op.getRhs(), m_Zero()))
-    {
-      rewriter.replaceOp(op, op.getLhs());
-      return success();
-    }
-    return failure();
-  }
-};
-
-// Register them
+// Register pattern rewrite
 void SubOp::getCanonicalizationPatterns(RewritePatternSet &results, MLIRContext *context)
 {
   results.add<SimplifySameOperandSub>(context);
