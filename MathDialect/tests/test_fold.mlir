@@ -1,7 +1,7 @@
 func.func @main(%arg0: i32, %arg1: i32) -> i32 {
   // Constant Folding: should become 30
-  %c10 = math.constant 10 : i32
-  %c20 = math.constant 20 : i32
+  %c10 = arith.constant 10 : i32
+  %c20 = arith.constant 20 : i32
   %const_sum = math.add %c10, %c20 : i32
 
   // Structural Folding: (a - b) + b should become just 'a' (%arg0)
