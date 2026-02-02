@@ -5,47 +5,47 @@
 using namespace mlir;
 using namespace mlir::math;
 
-// === ConstantOp Implementation ===
+// // === ConstantOp Implementation ===
 
-OpFoldResult ConstantOp::fold(FoldAdaptor adaptor)
-{
-  // Simply return the attribute value itself
-  return getValue();
-}
+// OpFoldResult ConstantOp::fold(FoldAdaptor adaptor)
+// {
+//   // Simply return the attribute value itself
+//   return getValue();
+// }
 
-LogicalResult ConstantOp::verify()
-{
-  // Basic verification: ensure the value attribute matches the result type
-  auto type = getType();
-  auto value = getValue();
+// LogicalResult ConstantOp::verify()
+// {
+//   // Basic verification: ensure the value attribute matches the result type
+//   auto type = getType();
+//   auto value = getValue();
 
-  if (!llvm::isa<IntegerAttr, FloatAttr>(value))
-    return emitOpError("requires an integer or floating point attribute");
+//   if (!llvm::isa<IntegerAttr, FloatAttr, ElementsAttr>(value))
+//     return emitOpError("requires an integer or floating point attribute");
 
-  return success();
-}
+//   return success();
+// }
 
-ParseResult ConstantOp::parse(OpAsmParser &parser, OperationState &result)
-{
-  Attribute valueAttr;
-  // This parses "5 : i32" as a single TypedAttr
-  if (parser.parseAttribute(valueAttr))
-    return failure();
+// ParseResult ConstantOp::parse(OpAsmParser &parser, OperationState &result)
+// {
+//   Attribute valueAttr;
+//   // This parses "5 : i32" as a single TypedAttr
+//   if (parser.parseAttribute(valueAttr))
+//     return failure();
 
-  result.addAttribute("value", valueAttr);
+//   result.addAttribute("value", valueAttr);
 
-  // Extract the type from the attribute to set the result type
-  if (auto typedAttr = llvm::dyn_cast<TypedAttr>(valueAttr))
-    result.addTypes(typedAttr.getType());
+//   // Extract the type from the attribute to set the result type
+//   if (auto typedAttr = llvm::dyn_cast<TypedAttr>(valueAttr))
+//     result.addTypes(typedAttr.getType());
 
-  return success();
-}
+//   return success();
+// }
 
-void ConstantOp::print(OpAsmPrinter &p)
-{
-  p << " ";
-  p.printAttribute(getValue()); // This prints "5 : i32"
-}
+// void ConstantOp::print(OpAsmPrinter &p)
+// {
+//   p << " ";
+//   p.printAttribute(getValue()); // This prints "5 : i32"
+// }
 
 // === AddOp Implementation ===
 
@@ -178,6 +178,22 @@ OpFoldResult DivOp::fold(FoldAdaptor adaptor)
     return FloatAttr::get(lFloat.getType(), result);
   }
   return nullptr;
+}
+
+// === SplatOp Implementation ===
+OpFoldResult SplatOp::fold(FoldAdaptor adaptor)
+{
+  // Use the adaptor to get the attribute of the 'src' operand
+  auto srcAttr = adaptor.getSrc();
+  if (!srcAttr)
+    return nullptr;
+
+  // Get the result type (the tensor type)
+  auto tensorType = llvm::cast<RankedTensorType>(getResult().getType());
+
+  // Create a SplatElementsAttr: this is the "canonical" way to represent
+  // a tensor filled with a single constant value.
+  return SplatElementsAttr::get(tensorType, srcAttr);
 }
 
 #define GET_OP_CLASSES
