@@ -1,8 +1,8 @@
 func.func @math_fold(%arg0: i32) -> i32 {
-  %c0 = math.constant 0 : i32
-  %c1 = math.constant 1 : i32
-  %c10 = math.constant 10 : i32
-  %c2 = math.constant 2 : i32
+  %c0 = arith.constant 0 : i32
+  %c1 = arith.constant 1 : i32
+  %c10 = arith.constant 10 : i32
+  %c2 = arith.constant 2 : i32
 
   // Should fold to 20
   %0 = math.mul %c10, %c2 : i32

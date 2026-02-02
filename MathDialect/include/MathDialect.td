@@ -1,15 +1,12 @@
-#ifndef MATH_DIALECT
-#define MATH_DIALECT
-
 include "mlir/IR/OpBase.td"
 
 def Math_Dialect : Dialect {
     let name = "math";
-    let summary = "A math out-of-tree MLIR dialect.";
+    let summary = "A math MLIR dialect.";
     let cppNamespace = "::mlir::math";
+
+    let hasConstantMaterializer = 1;
 
     let useDefaultTypePrinterParser = 0;
     let useDefaultAttributePrinterParser = 0;   
 }
-
-#endif // MATH_DIALECT

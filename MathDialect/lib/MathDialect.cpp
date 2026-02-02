@@ -18,3 +18,11 @@ void MathDialect::initialize()
       >();
   // registerTypes();
 }
+
+Operation *MathDialect::materializeConstant(OpBuilder &builder, Attribute value,
+                                            Type type, Location loc)
+{
+  // This allows the canonicalizer to create a 'math.constant'
+  // whenever a fold results in a new value.
+  return builder.create<math::ConstantOp>(loc, type, llvm::cast<TypedAttr>(value));
+}

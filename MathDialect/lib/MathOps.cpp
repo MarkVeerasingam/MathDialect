@@ -1,111 +1,84 @@
 #include "MathOps.h"
 #include "mlir/IR/Matchers.h"
-#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/OpImplementation.h"
 
 using namespace mlir;
 using namespace mlir::math;
 
-/**
- * dev note: this is modeled from arith: https://github.com/llvm/llvm-project/blob/main/mlir/lib/Dialect/Arith/IR/ArithOps.cpp
- */
+// === ConstantOp Implementation ===
 
-//===----------------------------------------------------------------------===//
-// ConstantOp
-//===----------------------------------------------------------------------===//
-
-OpFoldResult ConstantOp::fold(FoldAdaptor adaptor) {
-    return getValueAttr();
+OpFoldResult ConstantOp::fold(FoldAdaptor adaptor)
+{
+  // Simply return the attribute value itself
+  return getValue();
 }
 
-//===----------------------------------------------------------------------===//
-// AddOp
-//===----------------------------------------------------------------------===//
+LogicalResult ConstantOp::verify()
+{
+  // Basic verification: ensure the value attribute matches the result type
+  auto type = getType();
+  auto value = getValue();
 
-OpFoldResult AddOp::fold(FoldAdaptor adaptor) {
-  // x + 0 = x
+  if (!llvm::isa<IntegerAttr, FloatAttr>(value))
+    return emitOpError("requires an integer or floating point attribute");
+
+  return success();
+}
+
+ParseResult ConstantOp::parse(OpAsmParser &parser, OperationState &result)
+{
+  Attribute valueAttr;
+  Type type;
+  // Parses: 10 : i32  OR  1.0 : f32
+  if (parser.parseAttribute(valueAttr) || parser.parseColonType(type))
+    return failure();
+
+  result.addAttribute("value", valueAttr);
+  result.addTypes(type);
+  return success();
+}
+
+void ConstantOp::print(OpAsmPrinter &p)
+{
+  p << " ";
+  p.printAttributeWithoutType(getValue());
+  p << " : ";
+  p.printType(getType());
+}
+
+// === AddOp Implementation ===
+
+OpFoldResult AddOp::fold(FoldAdaptor adaptor)
+{
+  // 1. Algebraic simplification: x + 0 = x
   if (matchPattern(getRhs(), m_Zero()))
     return getLhs();
 
-  // (a - b) + b = a
-  if (auto subOp = getLhs().getDefiningOp<SubOp>()) {
-    if (subOp.getRhs() == getRhs())
-      return subOp.getLhs();
-  }
+  // 2. Constant folding
+  auto lhs = adaptor.getLhs();
+  auto rhs = adaptor.getRhs();
 
-  // Constant Folding
-  auto lhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getLhs());
-  auto rhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getRhs());
-  if (lhs && rhs) {
-    return IntegerAttr::get(lhs.getType(), lhs.getInt() + rhs.getInt());
-  }
-
-  return nullptr;
-}
-
-//===----------------------------------------------------------------------===//
-// SubOp
-//===----------------------------------------------------------------------===//
-
-OpFoldResult SubOp::fold(FoldAdaptor adaptor) {
-    // x - 0 = x
-    if (matchPattern(getRhs(), m_Zero()))
-        return getLhs();
-
-    // x - x = 0
-    if (getLhs() == getRhs())
-        return IntegerAttr::get(getLhs().getType(), 0);
-
-    // Constant Folding
-    auto lhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getLhs());
-    auto rhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getRhs());
-    if (lhs && rhs) {
-        return IntegerAttr::get(lhs.getType(), lhs.getInt() - rhs.getInt());
+  if (lhs && rhs)
+  {
+    // Integer Case
+    if (auto lInt = llvm::dyn_cast<IntegerAttr>(lhs))
+    {
+      if (auto rInt = llvm::dyn_cast<IntegerAttr>(rhs))
+      {
+        return IntegerAttr::get(lInt.getType(), lInt.getValue() + rInt.getValue());
+      }
     }
 
-    return nullptr;
-}
-
-//===----------------------------------------------------------------------===//
-// MulOp Folding
-//===----------------------------------------------------------------------===//
-
-OpFoldResult MulOp::fold(FoldAdaptor adaptor) {
-  // 1. Identity: x * 1 = x
-  if (matchPattern(getRhs(), m_One()))
-    return getLhs();
-
-  // 2. Identity: x * 0 = 0
-  if (matchPattern(getRhs(), m_Zero()))
-    return getRhs(); // Returns the zero attribute
-
-  // 3. Constant Folding
-  auto lhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getLhs());
-  auto rhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getRhs());
-  if (lhs && rhs)
-    return IntegerAttr::get(lhs.getType(), lhs.getInt() * rhs.getInt());
-
-  return nullptr;
-}
-
-//===----------------------------------------------------------------------===//
-// DivOp Folding
-//===----------------------------------------------------------------------===//
-
-OpFoldResult DivOp::fold(FoldAdaptor adaptor) {
-  // 1. Identity: x / 1 = x
-  if (matchPattern(getRhs(), m_One()))
-    return getLhs();
-
-  // 2. Constant Folding
-  auto lhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getLhs());
-  auto rhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getRhs());
-  
-  if (lhs && rhs) {
-    auto divisor = rhs.getInt();
-    // 3. Safety Check: Don't fold if divisor is 0!
-    // If we don't check this, the compiler itself will crash (SIGFPE)
-    if (divisor != 0)
-      return IntegerAttr::get(lhs.getType(), lhs.getInt() / divisor);
+    // Floating Point Case
+    if (auto lFloat = llvm::dyn_cast<FloatAttr>(lhs))
+    {
+      if (auto rFloat = llvm::dyn_cast<FloatAttr>(rhs))
+      {
+        APFloat result = lFloat.getValue();
+        result.add(rFloat.getValue(), APFloat::rmNearestTiesToEven);
+        return FloatAttr::get(lFloat.getType(), result);
+      }
+    }
   }
 
   return nullptr;
