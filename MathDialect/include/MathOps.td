@@ -37,3 +37,29 @@ def Math_AddOp : Math_Op<"add", [Pure, AllTypesMatch<["lhs", "rhs", "res"]>]> {
     let hasFolder = 1; 
 }
 
+// Subtraction Op
+def Math_SubOp : Math_Op<"sub", [Pure, AllTypesMatch<["lhs", "rhs", "res"]>]> {
+    let arguments = (ins AnyTypeOf<[AnyFloat, AnyInteger]>:$lhs, 
+                         AnyTypeOf<[AnyFloat, AnyInteger]>:$rhs);
+    let results = (outs AnyTypeOf<[AnyFloat, AnyInteger]>:$res);
+    let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($res)";
+    let hasFolder = 1;
+}
+
+// Multiplication Op
+def Math_MulOp : Math_Op<"mul", [Pure, AllTypesMatch<["lhs", "rhs", "res"]>]> {
+    let arguments = (ins AnyTypeOf<[AnyFloat, AnyInteger]>:$lhs, 
+                         AnyTypeOf<[AnyFloat, AnyInteger]>:$rhs);
+    let results = (outs AnyTypeOf<[AnyFloat, AnyInteger]>:$res);
+    let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($res)";
+    let hasFolder = 1;
+}
+
+// Division Op
+def Math_DivOp : Math_Op<"div", [Pure, AllTypesMatch<["lhs", "rhs", "res"]>]> {
+    let arguments = (ins AnyTypeOf<[AnyFloat, AnyInteger]>:$lhs, 
+                         AnyTypeOf<[AnyFloat, AnyInteger]>:$rhs);
+    let results = (outs AnyTypeOf<[AnyFloat, AnyInteger]>:$res);
+    let assemblyFormat = "$lhs `,` $rhs attr-dict `:` type($res)";
+    let hasFolder = 1;
+}
